@@ -1,0 +1,52 @@
+---
+- block:
+    - name: Check status of jailing
+      shell: "sysctl -n security.jail.jailed"
+      register: is_jail
+      changed_when: false
+
+    - block:
+        - name: Fetch Updates
+          shell: "freebsd-update --not-running-from-cron fetch"
+          ignore_errors: yes
+          changed_when: false
+
+        - name: Check for Updates
+          shell: "freebsd-update --not-running-from-cron updatesready"
+          register: freebsd_updates
+          ignore_errors: yes
+          changed_when: false
+
+        - name: Install Updates
+          shell: "freebsd-update --not-running-from-cron install"
+          when: freebsd_updates.rc != 2
+
+      when: is_jail.stdout == '0'
+
+    # - name: Update packages cache
+    #   shell: "pkg update -q"
+    #   changed_when: false
+
+    - name: Check for packages update
+      shell: "pkg upgrade -n"
+      changed_when: false
+      register: has_packages_updates
+
+    - name: Update packages
+      shell: "pkg upgrade -y"
+      when: has_packages_updates.stdout.find('Your packages are up to date.') == -1
+
+    - name: Clean packages cache
+      shell: "pkg clean -qy"
+      changed_when: false
+
+    - name: Check for jails
+      shell: "jls | grep -v JID | wc -l | tr -d ' '"
+      register: has_jails
+      changed_when: false
+
+    - name: Update base jail
+      command: 'ezjail-admin update -u'
+      when: has_jails.stdout != '0' and is_jail.stdout == '0'
+
+  when: ansible_os_family == 'FreeBSD'
