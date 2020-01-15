@@ -27,6 +27,10 @@
     #   shell: "pkg update -q"
     #   changed_when: false
 
+    - name: Update ports
+      shell: portsnap --interactive auto
+      changed_when: no
+
     - name: Check for packages update
       shell: "pkg upgrade -n"
       changed_when: false
