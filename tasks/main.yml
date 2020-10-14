@@ -55,3 +55,6 @@
       when: has_jails.stdout != '0' and is_jail.stdout == '0'
 
   when: ansible_os_family == 'FreeBSD'
+  tags:
+    - update
+    - upgrade
